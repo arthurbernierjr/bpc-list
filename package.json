@@ -4,15 +4,15 @@
   "description": "Big Poppa Code email list manager",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
+    "start": "tsx server.js",
+    "dev": "tsx --watch server.js",
     "create-admin": "node create-admin.js",
     "load-codes": "node load-codes.js",
-    "test:send": "node test-send.js",
-    "send:conference": "node send-conference.js",
-    "send:community": "node send-community.js",
-    "send:main-leads": "node send-main-leads.js",
-    "send:nyny": "node send-nyny.js"
+    "test:send": "tsx test-send.js",
+    "send:conference": "tsx send-conference.js",
+    "send:community": "tsx send-community.js",
+    "send:main-leads": "tsx send-main-leads.js",
+    "send:nyny": "tsx send-nyny.js"
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.0.0",
@@ -29,5 +29,8 @@
     "multer": "^1.4.5-lts.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
   }
 }
