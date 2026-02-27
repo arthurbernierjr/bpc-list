@@ -1,0 +1,17 @@
+node_modules/
+.env
+*.csv
+uploads/
+codes.json
+*.zip
+
+# Local files
+*.local
+*.local.*
+*.local.*.*
+*.local.*.*.*
+*.local.*.*.*.*
+*.local.*.*.*.*.*
+*.local.*.*.*.*.*.*
+*.local.*.*.*.*.*.*.*
+

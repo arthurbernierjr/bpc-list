@@ -1,0 +1,33 @@
+{
+  "name": "bpc-list-manager",
+  "version": "1.0.0",
+  "description": "Big Poppa Code email list manager",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "create-admin": "node create-admin.js",
+    "load-codes": "node load-codes.js",
+    "test:send": "node test-send.js",
+    "send:conference": "node send-conference.js",
+    "send:community": "node send-community.js",
+    "send:main-leads": "node send-main-leads.js",
+    "send:nyny": "node send-nyny.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ses": "^3.0.0",
+    "@react-email/components": "^0.0.21",
+    "@react-email/render": "^0.0.17",
+    "bcrypt": "^6.0.0",
+    "csv-parse": "^5.5.6",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.4.0",
+    "multer": "^1.4.5-lts.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

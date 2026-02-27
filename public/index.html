@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BPC List Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold:    #FFD700;
+      --silver:  #C0C0C0;
+      --bg:      #080808;
+      --surface: #101010;
+      --card:    #141414;
+      --border:  #1e1e1e;
+      --text:    #d4d4d4;
+      --muted:   #555;
+      --danger:  #ff4444;
+      --success: #00cc66;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      min-height: 100vh;
+    }
+
+    /* ── LOGIN SCREEN ── */
+    .login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .login-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .login-logo {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .login-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 24px;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .login-sub {
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 32px;
+    }
+
+    .login-form {
+      text-align: left;
+    }
+
+    .login-error {
+      background: rgba(255,68,68,0.1);
+      border: 1px solid var(--danger);
+      border-radius: 4px;
+      color: var(--danger);
+      font-size: 11px;
+      padding: 10px 12px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .login-error.show { display: block; }
+
+    /* ── APP (hidden until logged in) ── */
+    .app { display: none; }
+    .app.show { display: block; }
+    .login-screen.hidden { display: none; }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      background: var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      color: #000;
+      border-radius: 4px;
+    }
+
+    .logo-text {
+      font-family: 'DM Serif Display', serif;
+      font-size: 17px;
+      color: #fff;
+      letter-spacing: -0.3px;
+    }
+
+    .logo-text span { color: var(--gold); }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .header-meta {
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 1px;
+    }
+
+    .btn-logout {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-logout:hover {
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+
+    /* ── NAV TABS ── */
+    .nav-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--bg);
+      padding: 0 32px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-tab {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      padding: 14px 20px;
+      transition: all 0.15s;
+    }
+
+    .nav-tab:hover {
+      color: var(--text);
+    }
+
+    .nav-tab.active {
+      border-bottom-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* ── LAYOUT ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      height: calc(100vh - 100px);
+    }
+
+    .layout.full-width {
+      grid-template-columns: 1fr;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 20px 20px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-label {
+      color: var(--muted);
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-gold {
+      background: var(--gold);
+      color: #000;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .btn-gold:hover { background: #ffec6e; transform: translateY(-1px); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover { color: var(--text); border-color: #333; }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid transparent;
+      padding: 4px 8px;
+      font-size: 10px;
+    }
+
+    .btn-danger:hover { border-color: var(--danger); background: rgba(255,68,68,0.08); }
+
+    .btn-silver {
+      background: var(--silver);
+      color: #000;
+    }
+
+    .btn-silver:hover { background: #d0d0d0; transform: translateY(-1px); }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* ── LIST ITEMS ── */
+    .lists-scroll {
+      overflow-y: auto;
+      flex: 1;
+      padding: 8px;
+    }
+
+    .list-item {
+      padding: 12px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      margin-bottom: 4px;
+      transition: all 0.15s;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .list-item:hover { background: var(--card); border-color: var(--border); }
+    .list-item.active { background: var(--card); border-color: var(--gold); }
+
+    .list-item-name {
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      font-family: 'DM Serif Display', serif;
+      font-size: 14px;
+    }
+
+    .list-item-meta {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .list-item-count {
+      background: var(--border);
+      color: var(--muted);
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 10px;
+      flex-shrink: 0;
+      margin-left: 8px;
+    }
+
+    .list-item.active .list-item-count {
+      background: rgba(255,215,0,0.15);
+      color: var(--gold);
+    }
+
+    /* ── MAIN ── */
+    .main {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .main-header {
+      padding: 24px 32px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .main-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: #fff;
+    }
+
+    .main-title span { color: var(--gold); }
+
+    .stats-row {
+      display: flex;
+      gap: 24px;
+      margin-top: 6px;
+    }
+
+    .stat { font-size: 11px; }
+    .stat-val { color: var(--gold); font-weight: 700; }
+    .stat-label { color: var(--muted); }
+
+    .main-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    /* ── UPLOAD ZONE ── */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin: 20px 32px;
+      flex-shrink: 0;
+    }
+
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: var(--gold);
+      background: rgba(255,215,0,0.03);
+    }
+
+    .upload-zone input { display: none; }
+    .upload-icon { font-size: 28px; margin-bottom: 8px; }
+    .upload-text { color: var(--text); font-size: 12px; margin-bottom: 4px; }
+    .upload-sub { color: var(--muted); font-size: 11px; }
+
+    /* ── PROGRESS ── */
+    .progress-bar {
+      display: none;
+      margin: 0 32px 12px;
+      background: var(--border);
+      border-radius: 4px;
+      height: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar.active { display: block; }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--gold);
+      width: 0%;
+      transition: width 0.3s;
+      border-radius: 4px;
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-size: 12px;
+      color: var(--text);
+      z-index: 999;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.25s;
+      max-width: 320px;
+    }
+
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { border-color: var(--success); color: var(--success); }
+    .toast.error   { border-color: var(--danger);  color: var(--danger); }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 32px 32px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 10px 12px;
+      color: var(--muted);
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 10;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #111;
+      transition: background 0.1s;
+    }
+
+    tbody tr:hover { background: var(--card); }
+
+    tbody td {
+      padding: 10px 12px;
+      color: var(--text);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .badge-active {
+      background: rgba(0, 204, 102, 0.12);
+      color: var(--success);
+    }
+
+    .badge-unsub {
+      background: rgba(255, 68, 68, 0.12);
+      color: var(--danger);
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px;
+      color: var(--muted);
+    }
+
+    .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+    .empty-title { font-family: 'DM Serif Display', serif; font-size: 20px; color: #333; margin-bottom: 8px; }
+    .empty-sub { font-size: 12px; line-height: 1.6; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 32px;
+      width: 420px;
+      max-width: 90vw;
+      animation: modalIn 0.2s ease;
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.96) translateY(-10px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20px;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .modal-sub { color: var(--muted); font-size: 11px; margin-bottom: 24px; }
+
+    .form-group { margin-bottom: 16px; }
+
+    label {
+      display: block;
+      color: var(--muted);
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    input[type=text], input[type=email], input[type=password], textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 12px;
+      color: #fff;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input[type=text]:focus, input[type=email]:focus, input[type=password]:focus, textarea:focus { border-color: var(--gold); }
+    textarea { resize: vertical; min-height: 70px; }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+      justify-content: flex-end;
+    }
+
+    /* ── PAGINATION ── */
+    .pagination {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 32px 0;
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .pagination span { color: var(--muted); font-size: 11px; }
+
+    /* ── CAMPAIGNS VIEW ── */
+    .campaigns-container {
+      padding: 32px;
+      overflow-y: auto;
+      height: calc(100vh - 100px);
+    }
+
+    .campaigns-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 32px;
+    }
+
+    .campaign-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .campaign-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .campaign-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 18px;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .campaign-subject {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 8px;
+    }
+
+    .campaign-subject strong {
+      color: var(--text);
+    }
+
+    .campaign-badge {
+      background: rgba(255, 215, 0, 0.1);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      border-radius: 4px;
+      color: var(--gold);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 4px 10px;
+    }
+
+    .campaign-badge.silver {
+      background: rgba(192, 192, 192, 0.1);
+      border-color: rgba(192, 192, 192, 0.3);
+      color: var(--silver);
+    }
+
+    .campaign-preview {
+      background: #0a0a0a;
+      height: 400px;
+      position: relative;
+    }
+
+    .campaign-preview iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: #fff;
+    }
+
+    .campaign-preview-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0a0a0a;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .campaign-actions {
+      padding: 20px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .campaign-actions .btn {
+      flex: 1;
+    }
+
+    .test-results {
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--surface);
+      border-radius: 6px;
+      font-size: 11px;
+    }
+
+    .test-result-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .test-result-item:last-child {
+      border-bottom: none;
+    }
+
+    .test-result-icon {
+      font-size: 14px;
+    }
+
+    .test-result-email {
+      color: var(--text);
+      flex: 1;
+    }
+
+    .test-result-status {
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .test-result-status.success { color: var(--success); }
+    .test-result-status.error { color: var(--danger); }
+
+    /* ── ACCESS CODE STATS ── */
+    .access-code-stats {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+
+    .access-code-stats-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 16px;
+      color: #fff;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .access-code-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .access-code-stat {
+      text-align: center;
+      padding: 16px;
+      background: var(--surface);
+      border-radius: 8px;
+    }
+
+    .access-code-stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--gold);
+      font-family: 'Space Mono', monospace;
+    }
+
+    .access-code-stat-value.success { color: var(--success); }
+    .access-code-stat-value.muted { color: var(--muted); }
+
+    .access-code-stat-label {
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #333; }
+
+    /* ── ANIMATE IN ── */
+    .fade-in {
+      animation: fadeIn 0.3s ease both;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">👾</div>
+    <h1 class="login-title">BPC List Manager</h1>
+    <p class="login-sub">Sign in to manage your email lists</p>
+    
+    <div class="login-form">
+      <div class="login-error" id="loginError"></div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="admin@bigpoppacode.com" autocomplete="email" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <button class="btn btn-gold" onclick="handleLogin()" id="loginBtn" style="margin-top:8px;">
+        Sign In →
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP (hidden until authenticated) -->
+<div class="app" id="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-mark">👾</div>
+      <div class="logo-text">Big Poppa Code <span>/ Lists</span></div>
+    </div>
+    <div class="header-right">
+      <div class="header-meta">EMAIL LIST MANAGER · MONGODB</div>
+      <button class="btn-logout" onclick="handleLogout()">🚪 Logout</button>
+    </div>
+  </header>
+
+  <!-- NAV TABS -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchView('lists')" id="tabLists">📋 Lists</button>
+    <button class="nav-tab" onclick="switchView('campaigns')" id="tabCampaigns">📧 Campaigns</button>
+  </div>
+
+  <!-- LISTS VIEW -->
+  <div class="layout" id="viewLists">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-label">Your Lists</div>
+        <button class="btn btn-gold" onclick="openCreateModal()">+ New List</button>
+      </div>
+      <div class="lists-scroll" id="listsSidebar">
+        <div class="empty" style="padding:40px 20px;">
+          <div class="empty-icon">📋</div>
+          <div class="empty-sub">No lists yet.<br/>Create your first list.</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main" id="main">
+      <div class="empty" style="flex:1;">
+        <div class="empty-icon">👈</div>
+        <div class="empty-title">Select a List</div>
+        <div class="empty-sub">Choose a list from the sidebar<br/>or create a new one to get started.</div>
+      </div>
+    </main>
+  </div>
+
+  <!-- CAMPAIGNS VIEW -->
+  <div class="campaigns-container hidden" id="viewCampaigns">
+    <!-- Access Code Stats -->
+    <div class="access-code-stats" id="accessCodeStats">
+      <div class="access-code-stats-title">🔑 Access Code Inventory</div>
+      <div class="access-code-stats-grid">
+        <div class="access-code-stat">
+          <div class="access-code-stat-value" id="statTotal">-</div>
+          <div class="access-code-stat-label">Total Codes</div>
+        </div>
+        <div class="access-code-stat">
+          <div class="access-code-stat-value success" id="statAvailable">-</div>
+          <div class="access-code-stat-label">Available</div>
+        </div>
+        <div class="access-code-stat">
+          <div class="access-code-stat-value muted" id="statUsed">-</div>
+          <div class="access-code-stat-label">Used</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="campaigns-grid">
+      <!-- Conference Email -->
+      <div class="campaign-card fade-in">
+        <div class="campaign-header">
+          <div>
+            <div class="campaign-title">Conference Email</div>
+            <div class="campaign-subject"><strong>Subject:</strong> You showed up. So here's everything I've got.</div>
+          </div>
+          <span class="campaign-badge">800 RECIPIENTS</span>
+        </div>
+        <div class="campaign-preview" id="previewConference">
+          <div class="campaign-preview-loading">Loading preview...</div>
+        </div>
+        <div class="campaign-actions">
+          <button class="btn btn-gold" onclick="sendTestEmail('conference')" id="btnTestConference">
+            📤 Send Test Email
+          </button>
+        </div>
+        <div class="test-results hidden" id="resultsConference"></div>
+      </div>
+
+      <!-- Community Email -->
+      <div class="campaign-card fade-in">
+        <div class="campaign-header">
+          <div>
+            <div class="campaign-title">Community Email</div>
+            <div class="campaign-subject"><strong>Subject:</strong> Love, Cancer, and AI Automation</div>
+          </div>
+          <span class="campaign-badge silver">40K RECIPIENTS</span>
+        </div>
+        <div class="campaign-preview" id="previewCommunity">
+          <div class="campaign-preview-loading">Loading preview...</div>
+        </div>
+        <div class="campaign-actions">
+          <button class="btn btn-silver" onclick="sendTestEmail('community')" id="btnTestCommunity">
+            📤 Send Test Email
+          </button>
+        </div>
+        <div class="test-results hidden" id="resultsCommunity"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE LIST MODAL -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <h2>New List</h2>
+    <div class="modal-sub">Create an email contact list</div>
+    <div class="form-group">
+      <label>List Name *</label>
+      <input type="text" id="newListName" placeholder="e.g. Conference Attendees 2025" />
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="newListDesc" placeholder="Optional description..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeCreateModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="createList()">Create List →</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── AUTH STATE ──
+  let authToken = localStorage.getItem('bpc_token');
+  let currentList = null;
+  let currentPage = 1;
+  let currentView = 'lists';
+  const LIMIT = 50;
+
+  // ── INIT ──
+  checkAuth();
+
+  async function checkAuth() {
+    if (!authToken) {
+      showLogin();
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/auth/verify', {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+
+      if (res.ok) {
+        showApp();
+        loadLists();
+      } else {
+        localStorage.removeItem('bpc_token');
+        authToken = null;
+        showLogin();
+      }
+    } catch (err) {
+      showLogin();
+    }
+  }
+
+  function showLogin() {
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('app').classList.remove('show');
+    document.getElementById('loginEmail').focus();
+  }
+
+  function showApp() {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('app').classList.add('show');
+  }
+
+  // ── VIEW SWITCHING ──
+  function switchView(view) {
+    currentView = view;
+    
+    document.getElementById('tabLists').classList.toggle('active', view === 'lists');
+    document.getElementById('tabCampaigns').classList.toggle('active', view === 'campaigns');
+    
+    document.getElementById('viewLists').classList.toggle('hidden', view !== 'lists');
+    document.getElementById('viewCampaigns').classList.toggle('hidden', view !== 'campaigns');
+
+    if (view === 'campaigns') {
+      loadCampaignPreviews();
+      loadAccessCodeStats();
+    }
+  }
+
+  // ── CAMPAIGN PREVIEWS ──
+  async function loadCampaignPreviews() {
+    // Load Conference preview
+    try {
+      const res = await authFetch('/api/preview/conference');
+      const html = await res.text();
+      const container = document.getElementById('previewConference');
+      container.innerHTML = `<iframe srcdoc="${html.replace(/"/g, '&quot;')}"></iframe>`;
+    } catch (err) {
+      document.getElementById('previewConference').innerHTML = 
+        `<div class="campaign-preview-loading" style="color:var(--danger)">Failed to load preview</div>`;
+    }
+
+    // Load Community preview
+    try {
+      const res = await authFetch('/api/preview/community');
+      const html = await res.text();
+      const container = document.getElementById('previewCommunity');
+      container.innerHTML = `<iframe srcdoc="${html.replace(/"/g, '&quot;')}"></iframe>`;
+    } catch (err) {
+      document.getElementById('previewCommunity').innerHTML = 
+        `<div class="campaign-preview-loading" style="color:var(--danger)">Failed to load preview</div>`;
+    }
+  }
+
+  // ── ACCESS CODE STATS ──
+  async function loadAccessCodeStats() {
+    try {
+      const res = await authFetch('/api/access-codes/stats');
+      const data = await res.json();
+      document.getElementById('statTotal').textContent = data.total.toLocaleString();
+      document.getElementById('statAvailable').textContent = data.available.toLocaleString();
+      document.getElementById('statUsed').textContent = data.used.toLocaleString();
+    } catch (err) {
+      console.error('Failed to load access code stats:', err);
+    }
+  }
+
+  // ── TEST EMAIL ──
+  async function sendTestEmail(templateName) {
+    const btn = document.getElementById(`btnTest${templateName.charAt(0).toUpperCase() + templateName.slice(1)}`);
+    const resultsEl = document.getElementById(`results${templateName.charAt(0).toUpperCase() + templateName.slice(1)}`);
+    
+    btn.disabled = true;
+    btn.textContent = '📤 Sending...';
+    resultsEl.classList.add('hidden');
+
+    try {
+      const res = await authFetch(`/api/test-send/${templateName}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        showToast(`✅ Test emails sent: ${data.sent} success, ${data.failed} failed`, data.failed > 0 ? 'error' : 'success');
+        
+        // Show results
+        resultsEl.innerHTML = `
+          <div style="margin-bottom:8px;color:var(--muted);font-size:10px;letter-spacing:1px;">TEST RESULTS</div>
+          ${data.results.map(r => `
+            <div class="test-result-item">
+              <span class="test-result-icon">${r.success ? '✅' : '❌'}</span>
+              <span class="test-result-email">${esc(r.email)}</span>
+              <span class="test-result-status ${r.success ? 'success' : 'error'}">${r.success ? 'SENT' : 'FAILED'}</span>
+            </div>
+          `).join('')}
+        `;
+        resultsEl.classList.remove('hidden');
+      } else {
+        showToast(data.error || 'Failed to send test emails', 'error');
+      }
+    } catch (err) {
+      showToast('Error: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '📤 Send Test Email';
+    }
+  }
+
+  // ── LOGIN ──
+  async function handleLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const btn = document.getElementById('loginBtn');
+    const errorEl = document.getElementById('loginError');
+
+    if (!email || !password) {
+      errorEl.textContent = 'Email and password are required';
+      errorEl.classList.add('show');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Signing in...';
+    errorEl.classList.remove('show');
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (data.token) {
+        authToken = data.token;
+        localStorage.setItem('bpc_token', authToken);
+        showApp();
+        loadLists();
+        showToast('Welcome back!', 'success');
+      } else {
+        errorEl.textContent = data.error || 'Login failed';
+        errorEl.classList.add('show');
+      }
+    } catch (err) {
+      errorEl.textContent = 'Connection error — try again';
+      errorEl.classList.add('show');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Sign In →';
+    }
+  }
+
+  document.getElementById('loginPassword')?.addEventListener?.('keydown', (e) => {
+    if (e.key === 'Enter') handleLogin();
+  });
+  document.getElementById('loginEmail')?.addEventListener?.('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('loginPassword').focus();
+  });
+
+  // ── LOGOUT ──
+  function handleLogout() {
+    localStorage.removeItem('bpc_token');
+    authToken = null;
+    currentList = null;
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPassword').value = '';
+    showLogin();
+    showToast('Logged out', 'success');
+  }
+
+  // ── AUTH FETCH HELPER ──
+  async function authFetch(url, options = {}) {
+    const headers = {
+      ...options.headers,
+      'Authorization': `Bearer ${authToken}`,
+    };
+
+    const res = await fetch(url, { ...options, headers });
+
+    if (res.status === 401) {
+      handleLogout();
+      throw new Error('Session expired');
+    }
+
+    return res;
+  }
+
+  // ── LISTS ──
+  async function loadLists() {
+    const res = await authFetch('/api/lists');
+    const lists = await res.json();
+    renderSidebar(lists);
+    if (currentList) {
+      const updated = lists.find(l => l._id === currentList._id);
+      if (updated) { currentList = updated; renderMainHeader(); }
+    }
+  }
+
+  function renderSidebar(lists) {
+    const el = document.getElementById('listsSidebar');
+    if (!lists.length) {
+      el.innerHTML = `<div class="empty" style="padding:40px 20px;">
+        <div class="empty-icon">📋</div>
+        <div class="empty-sub">No lists yet.<br/>Create your first list.</div>
+      </div>`;
+      return;
+    }
+    el.innerHTML = lists.map(list => `
+      <div class="list-item ${currentList?._id === list._id ? 'active' : ''} fade-in"
+           onclick="selectList(${JSON.stringify(list).replace(/"/g, '&quot;')})">
+        <div>
+          <div class="list-item-name">${esc(list.name)}</div>
+          <div class="list-item-meta">${list.subscribed.toLocaleString()} active · ${list.unsubscribed} unsub</div>
+        </div>
+        <span class="list-item-count">${list.total.toLocaleString()}</span>
+      </div>
+    `).join('');
+  }
+
+  function selectList(list) {
+    currentList = list;
+    currentPage = 1;
+    renderMain();
+    loadLists();
+  }
+
+  // ── MAIN PANEL ──
+  function renderMain() {
+    const main = document.getElementById('main');
+    main.innerHTML = `
+      <div class="main-header">
+        <div>
+          <div class="main-title">${esc(currentList.name)}</div>
+          <div class="stats-row">
+            <div class="stat"><span class="stat-val">${currentList.total?.toLocaleString() || 0}</span> <span class="stat-label">total</span></div>
+            <div class="stat"><span class="stat-val" style="color:var(--success)">${currentList.subscribed?.toLocaleString() || 0}</span> <span class="stat-label">subscribed</span></div>
+            <div class="stat"><span class="stat-val" style="color:var(--danger)">${currentList.unsubscribed || 0}</span> <span class="stat-label">unsubscribed</span></div>
+          </div>
+        </div>
+        <div class="main-actions">
+          <button class="btn btn-danger" onclick="deleteList('${currentList._id}')">🗑 Delete List</button>
+        </div>
+      </div>
+
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('csvInput').click()">
+        <input type="file" id="csvInput" accept=".csv" onchange="uploadCSV(this)" />
+        <div class="upload-icon">📤</div>
+        <div class="upload-text">Click to upload a CSV file</div>
+        <div class="upload-sub">Supports: email, first name, last name, phone, source &nbsp;·&nbsp; Duplicates are auto-skipped</div>
+      </div>
+
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+
+      <div class="table-wrap" id="tableWrap">
+        <div class="empty"><div class="empty-icon">📬</div><div class="empty-title">No Contacts Yet</div><div class="empty-sub">Upload a CSV to add contacts to this list.</div></div>
+      </div>
+    `;
+
+    const zone = document.getElementById('uploadZone');
+    zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      zone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file) uploadCSVFile(file);
+    });
+
+    loadContacts();
+  }
+
+  function renderMainHeader() {
+    if (!currentList) return;
+    document.querySelector('.main-title').innerHTML = esc(currentList.name);
+  }
+
+  async function loadContacts(page = 1) {
+    const res = await authFetch(`/api/lists/${currentList._id}/contacts?page=${page}&limit=${LIMIT}`);
+    const data = await res.json();
+    renderTable(data, page);
+  }
+
+  function renderTable({ contacts, total, pages }, page) {
+    const wrap = document.getElementById('tableWrap');
+    if (!contacts.length) {
+      wrap.innerHTML = `<div class="empty"><div class="empty-icon">📬</div><div class="empty-title">No Contacts Yet</div><div class="empty-sub">Upload a CSV to add contacts to this list.</div></div>`;
+      return;
+    }
+
+    wrap.innerHTML = `
+      <table class="fade-in">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Source</th>
+            <th>Status</th>
+            <th>Added</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${contacts.map(c => `
+            <tr>
+              <td>${esc(c.email)}</td>
+              <td>${esc(c.firstName !== 'Friend' ? c.firstName : (c.meta?.['first name'] || c.meta?.['First Name'] || 'Friend'))}${(c.lastName || c.meta?.['Last Name'] || c.meta?.['last name']) ? ' ' + esc(c.lastName || c.meta?.['Last Name'] || c.meta?.['last name']) : ''}</td>
+              <td style="color:var(--muted);font-size:11px;">${esc(c.phone || c.meta?.Phone || c.meta?.['phone number'] || '—')}</td>
+              <td style="color:var(--muted);font-size:10px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(c.source || c.meta?.source || '')}">${esc(c.source || c.meta?.source || '—')}</td>
+              <td><span class="badge ${c.subscribed ? 'badge-active' : 'badge-unsub'}">${c.subscribed ? 'Active' : 'Unsubscribed'}</span></td>
+              <td style="color:var(--muted)">${new Date(c.createdAt).toLocaleDateString()}</td>
+              <td><button class="btn btn-danger" onclick="deleteContact('${c._id}', this)">✕</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      ${pages > 1 ? `
+        <div class="pagination">
+          <button class="btn btn-ghost" onclick="loadContacts(${page - 1})" ${page <= 1 ? 'disabled style="opacity:0.3"' : ''}>← Prev</button>
+          <span>Page ${page} of ${pages} &nbsp;·&nbsp; ${total.toLocaleString()} contacts</span>
+          <button class="btn btn-ghost" onclick="loadContacts(${page + 1})" ${page >= pages ? 'disabled style="opacity:0.3"' : ''}>Next →</button>
+        </div>
+      ` : ''}
+    `;
+  }
+
+  // ── UPLOAD ──
+  function uploadCSV(input) {
+    if (input.files[0]) uploadCSVFile(input.files[0]);
+  }
+
+  async function uploadCSVFile(file) {
+    if (!file.name.endsWith('.csv')) { showToast('Please upload a .csv file', 'error'); return; }
+
+    const bar  = document.getElementById('progressBar');
+    const fill = document.getElementById('progressFill');
+    bar.classList.add('active');
+    fill.style.width = '30%';
+
+    const formData = new FormData();
+    formData.append('csv', file);
+
+    try {
+      fill.style.width = '70%';
+      const res  = await authFetch(`/api/lists/${currentList._id}/upload`, { method: 'POST', body: formData });
+      const data = await res.json();
+      fill.style.width = '100%';
+
+      if (data.success) {
+        showToast(`✅ ${data.added} added · ${data.updated} updated · ${data.skipped} skipped`, 'success');
+        await loadContacts();
+        await loadLists();
+      } else {
+        showToast(data.error || 'Upload failed', 'error');
+      }
+    } catch (e) {
+      showToast('Upload error: ' + e.message, 'error');
+    } finally {
+      setTimeout(() => { bar.classList.remove('active'); fill.style.width = '0%'; }, 800);
+    }
+  }
+
+  // ── DELETE ──
+  async function deleteContact(id, btn) {
+    btn.disabled = true;
+    await authFetch(`/api/contacts/${id}`, { method: 'DELETE' });
+    btn.closest('tr').remove();
+    loadLists();
+  }
+
+  async function deleteList(id) {
+    if (!confirm(`Delete "${currentList.name}" and all its contacts? This cannot be undone.`)) return;
+    await authFetch(`/api/lists/${id}`, { method: 'DELETE' });
+    currentList = null;
+    document.getElementById('main').innerHTML = `
+      <div class="empty" style="flex:1;">
+        <div class="empty-icon">👈</div>
+        <div class="empty-title">Select a List</div>
+        <div class="empty-sub">Choose a list from the sidebar<br/>or create a new one to get started.</div>
+      </div>`;
+    loadLists();
+    showToast('List deleted', 'success');
+  }
+
+  // ── CREATE MODAL ──
+  function openCreateModal() {
+    document.getElementById('createModal').classList.add('open');
+    document.getElementById('newListName').focus();
+  }
+
+  function closeCreateModal() {
+    document.getElementById('createModal').classList.remove('open');
+    document.getElementById('newListName').value = '';
+    document.getElementById('newListDesc').value = '';
+  }
+
+  async function createList() {
+    const name = document.getElementById('newListName').value.trim();
+    const description = document.getElementById('newListDesc').value.trim();
+    if (!name) { showToast('List name is required', 'error'); return; }
+
+    const res  = await authFetch('/api/lists', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description }),
+    });
+    const list = await res.json();
+
+    if (list._id) {
+      closeCreateModal();
+      await loadLists();
+      selectList({ ...list, total: 0, subscribed: 0, unsubscribed: 0 });
+      showToast(`List "${list.name}" created`, 'success');
+    } else {
+      showToast(list.error || 'Failed to create list', 'error');
+    }
+  }
+
+  document.getElementById('createModal').addEventListener('click', (e) => {
+    if (e.target.id === 'createModal') closeCreateModal();
+  });
+
+  document.getElementById('newListName')?.addEventListener?.('keydown', (e) => {
+    if (e.key === 'Enter') createList();
+  });
+
+  // ── TOAST ──
+  let toastTimer;
+  function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast show ${type}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.classList.remove('show'); }, 3500);
+  }
+
+  // ── UTILS ──
+  function esc(str) {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>
+</body>
+</html>

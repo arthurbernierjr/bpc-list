@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unsubscribe — Big Poppa Code</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #080808;
+      color: #d4d4d4;
+      font-family: 'Space Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #101010;
+      border: 1px solid #1e1e1e;
+      border-radius: 12px;
+      padding: 48px 40px;
+      max-width: 460px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .icon { font-size: 48px; margin-bottom: 20px; }
+
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 26px;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    .sub {
+      color: #555;
+      font-size: 12px;
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+
+    .email-display {
+      background: #141414;
+      border: 1px solid #1e1e1e;
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #FFD700;
+      margin-bottom: 28px;
+      word-break: break-all;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 28px;
+      border-radius: 6px;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+      width: 100%;
+    }
+
+    .btn-red {
+      background: #ff4444;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    .btn-red:hover { background: #ff6666; }
+
+    .btn-ghost {
+      background: transparent;
+      color: #555;
+      border: 1px solid #1e1e1e;
+    }
+
+    .btn-ghost:hover { color: #fff; border-color: #333; }
+
+    .success-state {
+      display: none;
+    }
+
+    .success-state.show { display: block; }
+    .initial-state.hidden { display: none; }
+
+    .success-icon { font-size: 52px; margin-bottom: 16px; }
+
+    .legal {
+      margin-top: 28px;
+      color: #333;
+      font-size: 10px;
+      line-height: 1.6;
+    }
+
+    .brand {
+      margin-top: 32px;
+      color: #333;
+      font-size: 10px;
+    }
+
+    .brand span { color: #FFD700; }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <!-- INITIAL STATE -->
+  <div class="initial-state" id="initialState">
+    <div class="icon">📧</div>
+    <h1>Unsubscribe</h1>
+    <p class="sub">You're about to unsubscribe from Big Poppa Code emails. You won't receive any more messages.</p>
+
+    <div class="email-display" id="emailDisplay">Loading...</div>
+
+    <button class="btn btn-red" onclick="doUnsubscribe()">Yes, Unsubscribe Me</button>
+    <button class="btn btn-ghost" onclick="window.close()">Never Mind</button>
+
+    <p class="legal">
+      Per CAN-SPAM Act requirements, unsubscribe requests are processed within 10 business days.
+      You will not be charged for this action.
+    </p>
+  </div>
+
+  <!-- SUCCESS STATE -->
+  <div class="success-state" id="successState">
+    <div class="success-icon">✅</div>
+    <h1>You're Unsubscribed</h1>
+    <p class="sub">Your email has been removed from this mailing list. You won't receive any more messages from this list.</p>
+    <p class="legal" style="margin-top:0">If you unsubscribed by mistake, you can always re-subscribe at <strong style="color:#d4d4d4">digitalbosscode.com</strong></p>
+  </div>
+
+  <div class="brand">Big Poppa Code · <span>Digital Boss Code</span></div>
+</div>
+
+<script>
+  const params  = new URLSearchParams(window.location.search);
+  const email   = params.get('email')  || '';
+  const listId  = params.get('list')   || '';
+
+  document.getElementById('emailDisplay').textContent = email || 'your email address';
+
+  async function doUnsubscribe() {
+    const btn = document.querySelector('.btn-red');
+    btn.textContent = 'Processing...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch('/unsubscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, listId }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        document.getElementById('initialState').classList.add('hidden');
+        document.getElementById('successState').classList.add('show');
+      } else {
+        btn.textContent = 'Error — try again';
+        btn.disabled = false;
+      }
+    } catch (e) {
+      btn.textContent = 'Error — try again';
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>
