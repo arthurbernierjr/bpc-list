@@ -8,14 +8,15 @@ import ConferenceEmail from './emails/ConferenceEmail.jsx';
 import CommunityEmail from './emails/CommunityEmail.jsx';
 import { connectDB, sendEmail } from './ses-mongo.js';
 
-const TEST_EMAIL = process.env.TEST_EMAIL;
+const TEST_EMAILS = (process.env.TEST_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
 const TEST_NAME = 'Arthur';
 
-if (!TEST_EMAIL) {
-  console.error('❌ TEST_EMAIL not set in .env');
+if (!TEST_EMAILS.length) {
+  console.error('❌ TEST_EMAILS not set in .env');
   process.exit(1);
 }
 
+const TEST_EMAIL = TEST_EMAILS[0]; // Use first email for test
 console.log(`\n📧  Test Send — sending to ${TEST_EMAIL}\n`);
 
 await connectDB();
