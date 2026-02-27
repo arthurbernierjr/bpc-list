@@ -22,8 +22,8 @@ await connectDB();
 
 // ─── SEND CONFERENCE EMAIL ──────────────────────────────────────────────────
 try {
-  const conferenceHtml = await render(<ConferenceEmail firstName={TEST_NAME} />);
-  const conferenceText = await render(<ConferenceEmail firstName={TEST_NAME} />, { plainText: true });
+  const conferenceHtml = await render(React.createElement(ConferenceEmail, { firstName: TEST_NAME }));
+  const conferenceText = await render(React.createElement(ConferenceEmail, { firstName: TEST_NAME }), { plainText: true });
 
   await sendEmail({
     toEmail: TEST_EMAIL,
@@ -41,8 +41,8 @@ try {
 
 // ─── SEND COMMUNITY EMAIL ───────────────────────────────────────────────────
 try {
-  const communityHtml = await render(<CommunityEmail firstName={TEST_NAME} />);
-  const communityText = await render(<CommunityEmail firstName={TEST_NAME} />, { plainText: true });
+  const communityHtml = await render(React.createElement(CommunityEmail, { firstName: TEST_NAME }));
+  const communityText = await render(React.createElement(CommunityEmail, { firstName: TEST_NAME }), { plainText: true });
 
   await sendEmail({
     toEmail: TEST_EMAIL,

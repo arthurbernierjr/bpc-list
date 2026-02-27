@@ -18,8 +18,8 @@ await sendCampaign({
       : (contact?.meta?.['First Name'] || contact?.meta?.['first name'] || 'Friend');
     
     return {
-      html: render(<ConferenceEmail firstName={name} />),
-      text: render(<ConferenceEmail firstName={name} />, { plainText: true }),
+      html: await render(React.createElement(ConferenceEmail, { firstName: name })),
+      text: await render(React.createElement(ConferenceEmail, { firstName: name }), { plainText: true }),
     };
   },
 });

@@ -17,8 +17,8 @@ await sendCampaign({
     const name = firstName !== 'Friend' ? firstName : (contact?.meta?.['first name'] || 'Friend');
     
     return {
-      html: render(<CommunityEmail firstName={name} />),
-      text: render(<CommunityEmail firstName={name} />, { plainText: true }),
+      html: await render(React.createElement(CommunityEmail, { firstName: name })),
+      text: await render(React.createElement(CommunityEmail, { firstName: name }), { plainText: true }),
     };
   },
 });
