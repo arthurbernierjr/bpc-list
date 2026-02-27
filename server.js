@@ -114,10 +114,10 @@ const AccessCodeSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-const Admin     = mongoose.model('Admin', AdminSchema);
-const List      = mongoose.model('List', ListSchema);
-const Contact   = mongoose.model('Contact', ContactSchema);
-const AccessCode = mongoose.model('AccessCode', AccessCodeSchema);
+const Admin      = mongoose.models.Admin      || mongoose.model('Admin', AdminSchema);
+const List       = mongoose.models.List       || mongoose.model('List', ListSchema);
+const Contact    = mongoose.models.Contact    || mongoose.model('Contact', ContactSchema);
+const AccessCode = mongoose.models.AccessCode || mongoose.model('AccessCode', AccessCodeSchema);
 
 // ─── CONNECT TO MONGODB ───────────────────────────────────────────────────────
 
