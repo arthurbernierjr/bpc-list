@@ -17,7 +17,7 @@ const LIBRARY_URL = process.env.LIBRARY_URL || 'https://theaipluglibrary.com';
 
 export default function AccessCodeEmail({ 
   firstName = 'Friend', 
-  accessCode = 'XXXX-XXXX-XXXX',
+  accessCode = 'qazwsx4',
   sessionPurchase = false,
 }) {
   return (

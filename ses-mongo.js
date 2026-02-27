@@ -155,6 +155,14 @@ export async function sendEmail({ toEmail, toName, subject, htmlBody, textBody, 
   return sesClient.send(command);
 }
 
+// ─── SES RATE LIMITS ─────────────────────────────────────────────────────────
+// Configure based on your SES account limits
+const SES_RATE_LIMIT = {
+  perSecond: 14,      // Max emails per second (your account limit)
+  perDay: 50000,      // Max emails per day (your account limit)
+  safetyMargin: 0.85, // Use 85% of limit to avoid throttling
+};
+
 // ─── RUN A CAMPAIGN FROM MONGODB ─────────────────────────────────────────────
 export async function sendCampaign({ listName, subject, buildEmail, campaignName }) {
   await connectDB();
@@ -164,12 +172,27 @@ export async function sendCampaign({ listName, subject, buildEmail, campaignName
 
   const contacts = await Contact.find({ listId: list._id, subscribed: true });
 
+  // Check daily limit
+  if (contacts.length > SES_RATE_LIMIT.perDay) {
+    console.error(`\n❌  ABORT: List has ${contacts.length.toLocaleString()} contacts but daily limit is ${SES_RATE_LIMIT.perDay.toLocaleString()}`);
+    console.error(`   Split the list or send over multiple days.\n`);
+    process.exit(1);
+  }
+
+  // Calculate optimal batch settings (stay under rate limit with safety margin)
+  const targetRate = Math.floor(SES_RATE_LIMIT.perSecond * SES_RATE_LIMIT.safetyMargin); // ~11-12/sec
+  const BATCH_SIZE = targetRate;
+  const DELAY_MS = 1000; // 1 second between batches
+
+  // Estimate time
+  const estimatedSeconds = Math.ceil(contacts.length / targetRate);
+  const estimatedMinutes = Math.ceil(estimatedSeconds / 60);
+
   console.log(`\n🚀  Campaign: "${campaignName || subject}"`);
   console.log(`📋  List: "${list.name}"`);
-  console.log(`📬  Subscribed contacts: ${contacts.length}\n`);
-
-  const BATCH_SIZE = 10;
-  const DELAY_MS   = 1100;
+  console.log(`📬  Subscribed contacts: ${contacts.length.toLocaleString()}`);
+  console.log(`⚡  Rate: ~${targetRate} emails/sec (limit: ${SES_RATE_LIMIT.perSecond}/sec)`);
+  console.log(`⏱️   Estimated time: ~${estimatedMinutes} minutes\n`);
 
   let sent = 0, failed = 0;
   const errors = [];

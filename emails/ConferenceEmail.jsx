@@ -15,8 +15,8 @@ import {
 } from '@react-email/components';
 import * as React from 'react';
 
-const BOOK_URL = process.env.BOOK_URL || 'https://your-book-download-link.com';
-const LIBRARY_URL = process.env.LIBRARY_URL || 'https://theaipluglibrary.com';
+const BOOK_URL = process.env.BOOK_URL || 'https://bigpoppacode.io/go/2032/qwertyuiopxz';
+const LIBRARY_URL = process.env.LIBRARY_URL || 'https://theaipluglibrary.com/purchase';
 const SESSION_URL = process.env.SESSION_URL || 'https://theaipluglibrary.com/session';
 
 export default function ConferenceEmail({ firstName = 'Friend' }) {
@@ -63,11 +63,14 @@ export default function ConferenceEmail({ firstName = 'Friend' }) {
             <Text style={sectionHeading}>Love, Cancer, and AI Automation</Text>
 
             <Text style={paragraph}>
-              A few months ago I thought my marriage was over.
+              About a year ago I thought my marriage was over.
             </Text>
 
             <Text style={paragraph}>
-              My wife and I were in a bad place. Her behavior had changed. Volatile, erratic, things that didn't make sense for the woman I married. I won't pretend I handled it perfectly. I made plans. I started thinking about what life looked like on the other side of a divorce.
+              My wife and I were in a bad place. Her behavior had changed. Volatile, dangerous, and erratic, things that didn't make sense for the woman I married. I won't pretend I handled it perfectly. I made plans. I started thinking about what life looked like on the other side of a divorce, with custody of our kids.
+            </Text>
+            <Text style={paragraph}>
+             I was scared. I have unresolved trauma from when I was a teenager and my cousin was murdered by her husband when he was having a mental health crisis.
             </Text>
 
             <Text style={paragraph}>
@@ -75,7 +78,7 @@ export default function ConferenceEmail({ firstName = 'Friend' }) {
             </Text>
 
             <Text style={paragraph}>
-              Brain cancer.
+              Stage 4 brain cancer.
             </Text>
 
             <Text style={paragraph}>
@@ -110,12 +113,12 @@ export default function ConferenceEmail({ firstName = 'Friend' }) {
 
             {/* Library Offer */}
             <Section style={offerSection}>
-              <Text style={offerTitle}>The AI Plug Library, $100</Text>
+              <Text style={offerTitle}>The AI Plug Library, $197</Text>
               <Text style={offerText}>
                 Everything I use. The frameworks, the prompts, the Claude Skills, the Vibe Coding systems, all of it organized and ready to deploy. I just added new Vibe Coding Frameworks and Claude Skills that aren't anywhere else.
               </Text>
               <Link href={LIBRARY_URL} style={libraryCtaButton}>
-                GET ACCESS FOR $100
+                GET ACCESS FOR $197
               </Link>
             </Section>
 

@@ -15,7 +15,7 @@ import {
 } from '@react-email/components';
 import * as React from 'react';
 
-const LIBRARY_URL = process.env.LIBRARY_URL || 'https://theaipluglibrary.com';
+const LIBRARY_URL = process.env.LIBRARY_URL || 'https://theaipluglibrary.com/purchase';
 const SESSION_URL = process.env.SESSION_URL || 'https://theaipluglibrary.com/session';
 
 export default function CommunityEmail({ firstName = 'Friend' }) {
@@ -28,7 +28,7 @@ export default function CommunityEmail({ firstName = 'Friend' }) {
           {/* Header */}
           <Section style={header}>
             <Text style={logoText}>Big Poppa Code 👾</Text>
-            <Text style={headerSub}>Digital Boss Code Community</Text>
+            <Text style={headerSub}>The AI Plug Lab Community</Text>
           </Section>
 
           {/* Main Content */}
@@ -40,7 +40,7 @@ export default function CommunityEmail({ firstName = 'Friend' }) {
             </Text>
 
             <Text style={paragraph}>
-              A few months ago I thought my marriage was over.
+              About a year ago I thought my marriage was over.
             </Text>
 
             <Text style={paragraph}>
@@ -48,7 +48,10 @@ export default function CommunityEmail({ firstName = 'Friend' }) {
             </Text>
 
             <Text style={paragraph}>
-              Then we found out she had brain cancer.
+              Then we found out she had stage 4 brain cancer.
+            </Text>
+            <Text style={paragraph}>
+             And it had been eating away at her for years and we didn't know it.
             </Text>
 
             <Text style={paragraph}>
@@ -89,7 +92,7 @@ export default function CommunityEmail({ firstName = 'Friend' }) {
               <Text style={libraryText}>
                 I just updated it with new Vibe Coding Frameworks and Claude Skills that aren't available anywhere else.
               </Text>
-              <Text style={priceText}>$100. One time. No subscription.</Text>
+              <Text style={priceText}>$197. One time. No subscription. Launch price ends March 9th.</Text>
               <Link href={LIBRARY_URL} style={libraryCtaButton}>
                 GET ACCESS
               </Link>
