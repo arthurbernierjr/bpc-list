@@ -127,7 +127,7 @@ export async function sendEmail({ toEmail, toName, subject, htmlBody, textBody, 
     const unsubFooter = `<div style="text-align:center;padding:24px;font-family:Helvetica,Arial,sans-serif;font-size:11px;color:#555555;border-top:1px solid #222222;margin-top:32px;">
   <a href="${unsubUrl}" style="color:#888888;text-decoration:underline;">Unsubscribe</a>
   &nbsp;&middot;&nbsp;
-  Big Poppa Code &middot; Digital Boss Code Community
+  Big Poppa Code
 </div>`;
 
     const htmlWithUnsub = htmlBody.includes('</body>')

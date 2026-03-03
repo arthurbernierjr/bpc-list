@@ -12,7 +12,9 @@
     "send:conference": "tsx send-conference.js",
     "send:community": "tsx send-community.js",
     "send:main-leads": "tsx send-main-leads.js",
-    "send:nyny": "tsx send-nyny.js"
+    "send:nyny": "tsx send-nyny.js",
+    "send:yt-main": "tsx send-youtube-video.js",
+    "send:yt-nyny": "tsx send-youtube-video1.js"
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.0.0",

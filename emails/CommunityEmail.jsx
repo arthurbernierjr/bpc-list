@@ -55,7 +55,7 @@ export default function CommunityEmail({ firstName = 'Friend' }) {
             </Text>
 
             <Text style={paragraph}>
-              Everything I had interpreted as our relationship falling apart was a symptom. The tumor had been changing her. The woman I had been pulling away from was fighting something she didn't even know was inside her.
+              Everything I had interpreted as our relationship falling apart was a symptom. The 8 tumors had been changing her. The woman I had been pulling away from was fighting something she didn't even know was inside her.
             </Text>
 
             <Text style={paragraph}>

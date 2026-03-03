@@ -8,7 +8,7 @@ import CommunityEmail from './emails/CommunityEmail.jsx';
 import { sendCampaign } from './ses-mongo.js';
 
 await sendCampaign({
-  listName:     'Digital Boss Code Community',
+  listName:     'Main Leads',
   campaignName: 'AI Plug Library — Community',
   subject:      'Love, Cancer, and AI Automation',
 

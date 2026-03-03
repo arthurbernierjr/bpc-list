@@ -15,7 +15,7 @@ import {
 } from '@react-email/components';
 import * as React from 'react';
 
-const BOOK_URL = process.env.BOOK_URL || 'https://bigpoppacode.io/go/2032/qwertyuiopxz';
+const BOOK_URL = 'https://bigpoppacode.io/go/2032/qwertyuiopxz';
 const LIBRARY_URL = process.env.LIBRARY_URL || 'https://theaipluglibrary.com/purchase';
 const SESSION_URL = process.env.SESSION_URL || 'https://theaipluglibrary.com/session';
 
@@ -82,7 +82,7 @@ export default function ConferenceEmail({ firstName = 'Friend' }) {
             </Text>
 
             <Text style={paragraph}>
-              Everything that had been happening, the mood swings, the verbal and physical outbursts, the person I didn't recognize anymore, it was the tumor. It wasn't her. It was never her.
+              Everything that had been happening, the mood swings, the verbal and physical outbursts, the person I didn't recognize anymore, it was the 8 tumors eating away at her brain. It wasn't her. It was never her.
             </Text>
 
             <Text style={paragraph}>

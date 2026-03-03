@@ -8,7 +8,7 @@ import ConferenceEmail from './emails/ConferenceEmail.jsx';
 import { sendCampaign } from './ses-mongo.js';
 
 await sendCampaign({
-  listName:     'Conference Attendees',
+  listName:     'NYNY Conference Leads',
   campaignName: 'AI Plug Library — Conference Attendees',
   subject:      'You showed up. So here\'s everything I\'ve got.',
 
