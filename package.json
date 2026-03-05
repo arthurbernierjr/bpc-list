@@ -9,6 +9,7 @@
     "create-admin": "node create-admin.js",
     "load-codes": "node load-codes.js",
     "test:send": "tsx test-send.js",
+    "test:rttpoc": "tsx test-send-rttpoc.js",
     "send:conference": "tsx send-conference.js",
     "send:community": "tsx send-community.js",
     "send:main-leads": "tsx send-main-leads.js",
