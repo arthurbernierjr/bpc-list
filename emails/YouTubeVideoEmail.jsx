@@ -12,6 +12,7 @@ import {
   Text,
   Link,
   Hr,
+  Img,
 } from '@react-email/components';
 import * as React from 'react';
 
@@ -19,11 +20,12 @@ const YOUTUBE_URL = process.env.YOUTUBE_URL || 'https://youtube.com/@bigpoppacod
 const LIBRARY_URL = process.env.LIBRARY_URL || 'https://theaipluglibrary.com/purchase';
 const PARTNER_URL = process.env.PARTNER_URL || 'https://theaipluglibrary.com/session';
 
-export default function YouTubeVideoEmail({ 
+export default function YouTubeVideoEmail({
   firstName = 'Friend',
   videoTitle = 'New Video on the Channel',
   videoUrl = 'https://youtube.com/@bigpoppacode',
   videoDescription = 'Check out my latest video on AI, automation, and building with code.',
+  videoThumbnailUrl = 'https://list-manager.bigpoppacode.io/video-1.png',
 }) {
   return (
     <Html>
@@ -47,6 +49,14 @@ export default function YouTubeVideoEmail({
 
             {/* Video Highlight Box */}
             <Section style={videoSection}>
+              <Link href={videoUrl} style={{ display: 'block', textDecoration: 'none' }}>
+                <Img
+                  src={videoThumbnailUrl}
+                  alt={videoTitle}
+                  width="100%"
+                  style={videoThumbnail}
+                />
+              </Link>
               <Text style={videoTitle}>{videoTitle}</Text>
               <Text style={videoDesc}>{videoDescription}</Text>
               <Link href={videoUrl} style={videoCtaButton}>
@@ -198,6 +208,13 @@ const videoSection = {
   margin: '0 0 28px 0',
   padding: '28px',
   textAlign: 'center',
+};
+
+const videoThumbnail = {
+  borderRadius: '6px',
+  display: 'block',
+  marginBottom: '20px',
+  width: '100%',
 };
 
 const videoTitle = {

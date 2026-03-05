@@ -126,10 +126,54 @@ const AccessCodeSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-const Admin      = mongoose.models.Admin      || mongoose.model('Admin', AdminSchema);
-const List       = mongoose.models.List       || mongoose.model('List', ListSchema);
-const Contact    = mongoose.models.Contact    || mongoose.model('Contact', ContactSchema);
-const AccessCode = mongoose.models.AccessCode || mongoose.model('AccessCode', AccessCodeSchema);
+const CampaignSchema = new mongoose.Schema({
+  name:         { type: String, required: true, trim: true },
+  subject:      { type: String, required: true },
+  listId:       { type: mongoose.Schema.Types.ObjectId, ref: 'List', required: true },
+  templateName: { type: String, required: true },
+  sentAt:       { type: Date, default: Date.now },
+  totalSent:    { type: Number, default: 0 },
+  totalFailed:  { type: Number, default: 0 },
+  createdAt:    { type: Date, default: Date.now },
+});
+
+const TrackingTokenSchema = new mongoose.Schema({
+  token:      { type: String, required: true, unique: true, index: true },
+  campaignId: { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign', required: true },
+  contactId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Contact', required: true },
+  tokenType:  { type: String, enum: ['open', 'click'], required: true },
+  targetUrl:  { type: String }, // for click tokens only
+  createdAt:  { type: Date, default: Date.now },
+});
+
+const EmailEventSchema = new mongoose.Schema({
+  campaignId: { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign', required: true },
+  contactId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Contact', required: true },
+  eventType:  { type: String, enum: ['open', 'click'], required: true },
+  timestamp:  { type: Date, default: Date.now },
+  url:        { type: String }, // for click events
+  userAgent:  { type: String },
+  ip:         { type: String },
+});
+
+EmailEventSchema.index({ campaignId: 1, contactId: 1, eventType: 1 });
+
+const EmailPreviewSchema = new mongoose.Schema({
+  token:        { type: String, required: true, unique: true, index: true },
+  templateName: { type: String, required: true },
+  sampleData:   { type: mongoose.Schema.Types.Mixed, default: {} },
+  createdAt:    { type: Date, default: Date.now },
+  expiresAt:    { type: Date, required: true },
+});
+
+const Admin         = mongoose.models.Admin         || mongoose.model('Admin', AdminSchema);
+const List          = mongoose.models.List          || mongoose.model('List', ListSchema);
+const Contact       = mongoose.models.Contact       || mongoose.model('Contact', ContactSchema);
+const AccessCode    = mongoose.models.AccessCode    || mongoose.model('AccessCode', AccessCodeSchema);
+const Campaign      = mongoose.models.Campaign      || mongoose.model('Campaign', CampaignSchema);
+const TrackingToken = mongoose.models.TrackingToken || mongoose.model('TrackingToken', TrackingTokenSchema);
+const EmailEvent    = mongoose.models.EmailEvent    || mongoose.model('EmailEvent', EmailEventSchema);
+const EmailPreview  = mongoose.models.EmailPreview  || mongoose.model('EmailPreview', EmailPreviewSchema);
 
 // ─── CONNECT TO MONGODB ───────────────────────────────────────────────────────
 
@@ -138,11 +182,65 @@ console.log('✅  Connected to MongoDB');
 
 // ─── IMPORT EMAIL TEMPLATES ──────────────────────────────────────────────────
 
-const templateMap = {
-  conference: async () => (await import('./emails/ConferenceEmail.jsx')).default,
-  community:  async () => (await import('./emails/CommunityEmail.jsx')).default,
-  accesscode: async () => (await import('./emails/AccessCodeEmail.jsx')).default,
+const templateRegistry = {
+  conference: {
+    name: 'Conference Email',
+    subject: "You showed up. So here's everything I've got.",
+    description: 'Follow-up for conference attendees',
+    loader: async () => (await import('./emails/ConferenceEmail.jsx')).default,
+    defaultProps: { firstName: 'Friend' },
+    propTypes: {
+      firstName: { type: 'text', label: 'First Name', placeholder: 'Friend' },
+    },
+  },
+  community: {
+    name: 'Community Email',
+    subject: 'Love, Cancer, and AI Automation',
+    description: 'Newsletter for main community list',
+    loader: async () => (await import('./emails/CommunityEmail.jsx')).default,
+    defaultProps: { firstName: 'Friend' },
+    propTypes: {
+      firstName: { type: 'text', label: 'First Name', placeholder: 'Friend' },
+    },
+  },
+  accesscode: {
+    name: 'Access Code Email',
+    subject: "You're in. Here's your AI Plug Library access 🔑",
+    description: 'Transactional email for library purchases',
+    loader: async () => (await import('./emails/AccessCodeEmail.jsx')).default,
+    defaultProps: { firstName: 'Friend', accessCode: 'DEMO123', sessionPurchase: false },
+    propTypes: {
+      firstName: { type: 'text', label: 'First Name', placeholder: 'Friend' },
+      accessCode: { type: 'text', label: 'Access Code', placeholder: 'DEMO123' },
+      sessionPurchase: { type: 'boolean', label: 'Session Purchase' },
+    },
+  },
+  youtubevideo: {
+    name: 'YouTube Video Email',
+    subject: 'New Video from Big Poppa Code',
+    description: 'Announcement for new YouTube videos',
+    loader: async () => (await import('./emails/YouTubeVideoEmail.jsx')).default,
+    defaultProps: {
+      firstName: 'Friend',
+      videoTitle: 'New Video on the Channel',
+      videoUrl: 'https://youtube.com/@bigpoppacode',
+      videoDescription: 'Check out my latest video on AI, automation, and building with code.',
+      videoThumbnailUrl: 'https://list-manager.bigpoppacode.io/video-1.png',
+    },
+    propTypes: {
+      firstName: { type: 'text', label: 'First Name', placeholder: 'Friend' },
+      videoTitle: { type: 'text', label: 'Video Title', placeholder: 'New Video on the Channel' },
+      videoUrl: { type: 'text', label: 'Video URL', placeholder: 'https://youtube.com/...' },
+      videoDescription: { type: 'textarea', label: 'Video Description', placeholder: 'Video description...' },
+      videoThumbnailUrl: { type: 'text', label: 'Thumbnail URL', placeholder: 'https://...' },
+    },
+  },
 };
+
+// Legacy templateMap for backward compatibility
+const templateMap = Object.fromEntries(
+  Object.entries(templateRegistry).map(([key, val]) => [key, val.loader])
+);
 
 // ─── JWT AUTH MIDDLEWARE (also requires localhost) ───────────────────────────
 
@@ -211,19 +309,60 @@ app.get('/api/auth/verify', localhostOnly, authMiddleware, (req, res) => {
   res.json({ valid: true, admin: req.admin });
 });
 
+// ─── EMAIL TEMPLATE ROUTES (LOCALHOST ONLY) ──────────────────────────────────
+
+// Get list of available templates with metadata
+app.get('/api/templates', localhostOnly, authMiddleware, async (req, res) => {
+  try {
+    const templates = Object.entries(templateRegistry).map(([key, template]) => ({
+      id: key,
+      name: template.name,
+      subject: template.subject,
+      description: template.description,
+      defaultProps: template.defaultProps,
+      propTypes: template.propTypes,
+    }));
+    res.json(templates);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── EMAIL PREVIEW ROUTES (LOCALHOST ONLY) ───────────────────────────────────
 
+// GET preview with default props
 app.get('/api/preview/:templateName', localhostOnly, authMiddleware, async (req, res) => {
   try {
     const { templateName } = req.params;
-    const getTemplate = templateMap[templateName.toLowerCase()];
+    const templateInfo = templateRegistry[templateName.toLowerCase()];
     
-    if (!getTemplate) {
+    if (!templateInfo) {
       return res.status(404).json({ error: `Template not found: ${templateName}` });
     }
 
-    const Template = await getTemplate();
-    const html = await render(React.createElement(Template, { firstName: 'Arthur' }));
+    const Template = await templateInfo.loader();
+    const props = { ...templateInfo.defaultProps };
+    const html = await render(React.createElement(Template, props));
+    
+    res.type('text/html').send(html);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST preview with custom props (for live editing)
+app.post('/api/preview/:templateName', localhostOnly, authMiddleware, async (req, res) => {
+  try {
+    const { templateName } = req.params;
+    const templateInfo = templateRegistry[templateName.toLowerCase()];
+    
+    if (!templateInfo) {
+      return res.status(404).json({ error: `Template not found: ${templateName}` });
+    }
+
+    const Template = await templateInfo.loader();
+    const props = { ...templateInfo.defaultProps, ...req.body };
+    const html = await render(React.createElement(Template, props));
     
     res.type('text/html').send(html);
   } catch (err) {
@@ -234,9 +373,9 @@ app.get('/api/preview/:templateName', localhostOnly, authMiddleware, async (req,
 app.post('/api/test-send/:templateName', localhostOnly, authMiddleware, async (req, res) => {
   try {
     const { templateName } = req.params;
-    const getTemplate = templateMap[templateName.toLowerCase()];
+    const templateInfo = templateRegistry[templateName.toLowerCase()];
     
-    if (!getTemplate) {
+    if (!templateInfo) {
       return res.status(404).json({ error: `Template not found: ${templateName}` });
     }
 
@@ -246,23 +385,18 @@ app.post('/api/test-send/:templateName', localhostOnly, authMiddleware, async (r
       return res.status(400).json({ error: 'No test emails configured in TEST_EMAILS env var' });
     }
 
-    const Template = await getTemplate();
-    const html = await render(React.createElement(Template, { firstName: 'Arthur' }));
-    const text = await render(React.createElement(Template, { firstName: 'Arthur' }), { plainText: true });
+    const Template = await templateInfo.loader();
+    const props = { ...templateInfo.defaultProps, ...req.body };
+    const html = await render(React.createElement(Template, props));
+    const text = await render(React.createElement(Template, props), { plainText: true });
 
-    const subjectMap = {
-      conference: 'You showed up. So here\'s everything I\'ve got.',
-      community:  'Love, Cancer, and AI Automation',
-      accesscode: 'You\'re in. Here\'s your AI Plug Library access 🔑',
-    };
-
-    const subject = `[TEST] ${subjectMap[templateName.toLowerCase()] || 'Test Email'}`;
+    const subject = `[TEST] ${templateInfo.subject}`;
 
     const results = await Promise.allSettled(
       testEmails.map(email => 
         sendEmail({
           toEmail: email,
-          toName: 'Arthur',
+          toName: props.firstName || 'Friend',
           subject,
           htmlBody: html,
           textBody: text,
@@ -573,6 +707,276 @@ app.get('/api/access-codes/stats', localhostOnly, authMiddleware, async (req, re
     res.json({ total, used, available });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── CAMPAIGN & PREVIEW ADMIN ROUTES (LOCALHOST ONLY) ────────────────────────
+
+// Create shareable email preview link
+app.post('/api/preview/create', localhostOnly, authMiddleware, async (req, res) => {
+  try {
+    const { templateName, sampleData } = req.body;
+    const templateInfo = templateRegistry[templateName?.toLowerCase()];
+    
+    if (!templateName || !templateInfo) {
+      return res.status(400).json({ error: 'Invalid template name' });
+    }
+    
+    // Generate unique token
+    const token = crypto.randomUUID();
+    
+    // Create preview with 7-day expiry
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+    
+    // Merge default props with provided sample data
+    const mergedData = { ...templateInfo.defaultProps, ...sampleData };
+    
+    await EmailPreview.create({
+      token,
+      templateName: templateName.toLowerCase(),
+      sampleData: mergedData,
+      expiresAt,
+    });
+    
+    const previewUrl = `${process.env.BASE_URL}/preview/${token}`;
+    
+    res.json({ success: true, previewUrl, expiresAt });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get all campaigns with stats
+app.get('/api/campaigns', localhostOnly, authMiddleware, async (req, res) => {
+  try {
+    const campaigns = await Campaign.find().sort({ sentAt: -1 }).populate('listId', 'name');
+    
+    // Calculate stats for each campaign
+    const campaignsWithStats = await Promise.all(campaigns.map(async (campaign) => {
+      // Get unique opens
+      const uniqueOpens = await EmailEvent.distinct('contactId', {
+        campaignId: campaign._id,
+        eventType: 'open',
+      });
+      
+      // Get unique clicks
+      const uniqueClicks = await EmailEvent.distinct('contactId', {
+        campaignId: campaign._id,
+        eventType: 'click',
+      });
+      
+      const openRate = campaign.totalSent > 0 
+        ? ((uniqueOpens.length / campaign.totalSent) * 100).toFixed(1)
+        : '0.0';
+      
+      const clickRate = campaign.totalSent > 0
+        ? ((uniqueClicks.length / campaign.totalSent) * 100).toFixed(1)
+        : '0.0';
+      
+      const clickToOpenRate = uniqueOpens.length > 0
+        ? ((uniqueClicks.length / uniqueOpens.length) * 100).toFixed(1)
+        : '0.0';
+      
+      return {
+        _id: campaign._id,
+        name: campaign.name,
+        subject: campaign.subject,
+        listName: campaign.listId?.name || 'Unknown',
+        templateName: campaign.templateName,
+        sentAt: campaign.sentAt,
+        totalSent: campaign.totalSent,
+        totalFailed: campaign.totalFailed,
+        uniqueOpens: uniqueOpens.length,
+        uniqueClicks: uniqueClicks.length,
+        openRate,
+        clickRate,
+        clickToOpenRate,
+      };
+    }));
+    
+    res.json(campaignsWithStats);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get detailed stats for a specific campaign
+app.get('/api/campaigns/:id/stats', localhostOnly, authMiddleware, async (req, res) => {
+  try {
+    const campaign = await Campaign.findById(req.params.id).populate('listId', 'name');
+    
+    if (!campaign) {
+      return res.status(404).json({ error: 'Campaign not found' });
+    }
+    
+    // Get all events for this campaign
+    const events = await EmailEvent.find({ campaignId: campaign._id })
+      .populate('contactId', 'email firstName lastName')
+      .sort({ timestamp: -1 });
+    
+    // Group events by contact
+    const contactStats = {};
+    
+    events.forEach(event => {
+      const contactId = event.contactId._id.toString();
+      
+      if (!contactStats[contactId]) {
+        contactStats[contactId] = {
+          email: event.contactId.email,
+          firstName: event.contactId.firstName,
+          lastName: event.contactId.lastName,
+          opened: false,
+          openedAt: null,
+          clicked: false,
+          clickedAt: null,
+          clickedUrls: [],
+        };
+      }
+      
+      if (event.eventType === 'open' && !contactStats[contactId].opened) {
+        contactStats[contactId].opened = true;
+        contactStats[contactId].openedAt = event.timestamp;
+      }
+      
+      if (event.eventType === 'click') {
+        contactStats[contactId].clicked = true;
+        if (!contactStats[contactId].clickedAt) {
+          contactStats[contactId].clickedAt = event.timestamp;
+        }
+        if (event.url && !contactStats[contactId].clickedUrls.includes(event.url)) {
+          contactStats[contactId].clickedUrls.push(event.url);
+        }
+      }
+    });
+    
+    res.json({
+      campaign: {
+        _id: campaign._id,
+        name: campaign.name,
+        subject: campaign.subject,
+        listName: campaign.listId?.name || 'Unknown',
+        sentAt: campaign.sentAt,
+        totalSent: campaign.totalSent,
+        totalFailed: campaign.totalFailed,
+      },
+      contactStats: Object.values(contactStats),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── EMAIL TRACKING ROUTES (PUBLIC — must be accessible from email clients) ──
+
+// Track email opens (1x1 transparent pixel)
+app.get('/track/open/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    // Find tracking token
+    const trackingToken = await TrackingToken.findOne({ token, tokenType: 'open' });
+    
+    if (trackingToken) {
+      // Log the open event (deduplication handled by unique index query)
+      await EmailEvent.findOneAndUpdate(
+        { 
+          campaignId: trackingToken.campaignId, 
+          contactId: trackingToken.contactId, 
+          eventType: 'open' 
+        },
+        {
+          $setOnInsert: {
+            campaignId: trackingToken.campaignId,
+            contactId: trackingToken.contactId,
+            eventType: 'open',
+            timestamp: new Date(),
+            userAgent: req.get('user-agent') || '',
+            ip: req.ip || '',
+          }
+        },
+        { upsert: true }
+      );
+    }
+    
+    // Return 1x1 transparent GIF (always, even if token not found - don't leak info)
+    const gif = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+    res.writeHead(200, {
+      'Content-Type': 'image/gif',
+      'Content-Length': gif.length,
+      'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+    });
+    res.end(gif);
+  } catch (err) {
+    // Always return GIF even on error - don't leak info
+    const gif = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+    res.writeHead(200, {
+      'Content-Type': 'image/gif',
+      'Content-Length': gif.length,
+    });
+    res.end(gif);
+  }
+});
+
+// Track link clicks and redirect
+app.get('/track/click/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    // Find tracking token
+    const trackingToken = await TrackingToken.findOne({ token, tokenType: 'click' });
+    
+    if (!trackingToken || !trackingToken.targetUrl) {
+      return res.status(404).send('Link not found');
+    }
+    
+    // Log the click event
+    await EmailEvent.create({
+      campaignId: trackingToken.campaignId,
+      contactId: trackingToken.contactId,
+      eventType: 'click',
+      url: trackingToken.targetUrl,
+      timestamp: new Date(),
+      userAgent: req.get('user-agent') || '',
+      ip: req.ip || '',
+    });
+    
+    // Redirect to original URL
+    res.redirect(302, trackingToken.targetUrl);
+  } catch (err) {
+    res.status(500).send('Error processing link');
+  }
+});
+
+// Public email preview (shareable links with token)
+app.get('/preview/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    // Find preview token
+    const preview = await EmailPreview.findOne({ token });
+    
+    if (!preview) {
+      return res.status(404).send('Preview not found');
+    }
+    
+    // Check if expired
+    if (preview.expiresAt < new Date()) {
+      return res.status(410).send('Preview link expired');
+    }
+    
+    // Render email template with sample data
+    const templateInfo = templateRegistry[preview.templateName];
+    if (!templateInfo) {
+      return res.status(404).send('Template not found');
+    }
+    
+    const Template = await templateInfo.loader();
+    const html = await render(React.createElement(Template, preview.sampleData));
+    
+    res.send(html);
+  } catch (err) {
+    res.status(500).send('Error rendering preview');
   }
 });
 

@@ -11,6 +11,7 @@ await sendCampaign({
   listName:     'NYNY Conference Leads',
   campaignName: 'AI Plug Library — Conference Attendees',
   subject:      'You showed up. So here\'s everything I\'ve got.',
+  templateName: 'conference',  // ← Added for tracking
 
   async buildEmail({ firstName }) {
     return {

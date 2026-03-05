@@ -10,6 +10,7 @@ await sendCampaign({
   listName:     'NYNY Conference Leads',  // Must match list name in dashboard exactly
   campaignName: 'NYNY Conference Follow-up',
   subject:      'It was great meeting you at New Year New You 🎯',
+  templateName: 'conference',  // ← Added for tracking
 
   async buildEmail({ firstName, contact }) {
     // Use first name from top-level or meta as fallback

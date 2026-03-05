@@ -10,6 +10,7 @@ await sendCampaign({
   listName:     'Main Leads',           // Must match list name in dashboard exactly
   campaignName: 'Main Leads Campaign',
   subject:      'The Silver Play Button just hit — and Season 2 is coming 🥈🎙️',
+  templateName: 'community',  // ← Added for tracking
 
   async buildEmail({ firstName, contact }) {
     // You can use contact.meta for additional personalization

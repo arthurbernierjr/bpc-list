@@ -11,6 +11,7 @@ await sendCampaign({
   listName:     'Main Leads',
   campaignName: 'AI Plug Library — Community',
   subject:      'Love, Cancer, and AI Automation',
+  templateName: 'community',  // ← Added for tracking
 
   async buildEmail({ firstName }) {
     return {

@@ -14,6 +14,7 @@ import { sendCampaign } from './ses-mongo.js';
 const VIDEO_TITLE = 'This Gold Rush Won\'t Wait for You to Learn Everything';
 const VIDEO_URL = 'https://youtu.be/TTbKwGMt_z4';
 const VIDEO_DESCRIPTION = 'The AI opportunity window is closing faster than you think. Learn why perfect preparation is the enemy of progress and what to do instead.';
+const VIDEO_THUMBNAIL_URL = 'https://list-manager.bigpoppacode.io/video-1.png';
 const EMAIL_SUBJECT = '⚡ This Gold Rush Won\'t Wait for You to Learn Everything';
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -34,6 +35,7 @@ await sendCampaign({
         videoTitle: VIDEO_TITLE,
         videoUrl: VIDEO_URL,
         videoDescription: VIDEO_DESCRIPTION,
+        videoThumbnailUrl: VIDEO_THUMBNAIL_URL,
       })),
       text: await render(React.createElement(YouTubeVideoEmail, { 
         firstName: name,
