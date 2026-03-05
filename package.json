@@ -14,13 +14,15 @@
     "send:main-leads": "tsx send-main-leads.js",
     "send:nyny": "tsx send-nyny.js",
     "send:yt-main": "tsx send-youtube-video.js",
-    "send:yt-nyny": "tsx send-youtube-video1.js"
+    "send:yt-nyny": "tsx send-youtube-video1.js",
+    "send:rttpoc-video": "tsx send-rttpoc-video.js"
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.0.0",
     "@react-email/components": "^0.0.21",
     "@react-email/render": "^0.0.17",
     "bcrypt": "^6.0.0",
+    "cheerio": "^1.2.0",
     "csv-parse": "^5.5.6",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
