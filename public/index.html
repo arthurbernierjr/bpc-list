@@ -724,6 +724,120 @@
     .test-result-status.success { color: var(--success); }
     .test-result-status.error { color: var(--danger); }
 
+    /* ── PROP EDITOR ── */
+    .template-props {
+      padding: 20px 24px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .props-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .props-toggle-title {
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .props-toggle-icon {
+      transition: transform 0.2s;
+    }
+
+    .props-toggle-icon.open {
+      transform: rotate(180deg);
+    }
+
+    .props-form {
+      display: none;
+      margin-top: 16px;
+    }
+
+    .props-form.open {
+      display: block;
+    }
+
+    .prop-group {
+      margin-bottom: 14px;
+    }
+
+    .prop-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .prop-label {
+      color: var(--muted);
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .prop-input {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 10px;
+      color: #fff;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .prop-input:focus {
+      border-color: var(--gold);
+    }
+
+    .prop-input::placeholder {
+      color: var(--muted);
+    }
+
+    .prop-textarea {
+      min-height: 60px;
+      resize: vertical;
+    }
+
+    .prop-checkbox-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .prop-checkbox {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--gold);
+    }
+
+    .prop-checkbox-label {
+      color: var(--text);
+      font-size: 11px;
+    }
+
+    .preview-updating {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.7);
+      color: var(--gold);
+      font-size: 10px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      z-index: 10;
+    }
+
     /* ── ACCESS CODE STATS ── */
     .access-code-stats {
       background: var(--card);
@@ -887,46 +1001,17 @@
       </div>
     </div>
 
-    <div class="campaigns-grid">
-      <!-- Conference Email -->
-      <div class="campaign-card fade-in">
-        <div class="campaign-header">
-          <div>
-            <div class="campaign-title">Conference Email</div>
-            <div class="campaign-subject"><strong>Subject:</strong> You showed up. So here's everything I've got.</div>
-          </div>
-          <span class="campaign-badge">800 RECIPIENTS</span>
-        </div>
-        <div class="campaign-preview" id="previewConference">
-          <div class="campaign-preview-loading">Loading preview...</div>
-        </div>
-        <div class="campaign-actions">
-          <button class="btn btn-gold" onclick="sendTestEmail('conference')" id="btnTestConference">
-            📤 Send Test Email
-          </button>
-        </div>
-        <div class="test-results hidden" id="resultsConference"></div>
+    <!-- Campaign History -->
+    <div style="margin-top:32px;">
+      <h2 style="margin-bottom:16px;">📊 Sent Campaigns</h2>
+      <div id="campaignsHistory">
+        <div style="text-align:center;padding:40px;color:#666;">Loading campaigns...</div>
       </div>
+    </div>
 
-      <!-- Community Email -->
-      <div class="campaign-card fade-in">
-        <div class="campaign-header">
-          <div>
-            <div class="campaign-title">Community Email</div>
-            <div class="campaign-subject"><strong>Subject:</strong> Love, Cancer, and AI Automation</div>
-          </div>
-          <span class="campaign-badge silver">40K RECIPIENTS</span>
-        </div>
-        <div class="campaign-preview" id="previewCommunity">
-          <div class="campaign-preview-loading">Loading preview...</div>
-        </div>
-        <div class="campaign-actions">
-          <button class="btn btn-silver" onclick="sendTestEmail('community')" id="btnTestCommunity">
-            📤 Send Test Email
-          </button>
-        </div>
-        <div class="test-results hidden" id="resultsCommunity"></div>
-      </div>
+    <h2 style="margin-top:48px;margin-bottom:16px;">🎨 Email Template Previews</h2>
+    <div class="campaigns-grid" id="templatesGrid">
+      <div style="text-align:center;padding:40px;color:#666;grid-column:1/-1;">Loading templates...</div>
     </div>
   </div>
 </div>
@@ -1013,32 +1098,189 @@
     if (view === 'campaigns') {
       loadCampaignPreviews();
       loadAccessCodeStats();
+      loadCampaignsHistory();  // ← Load sent campaigns
     }
   }
 
-  // ── CAMPAIGN PREVIEWS ──
-  async function loadCampaignPreviews() {
-    // Load Conference preview
-    try {
-      const res = await authFetch('/api/preview/conference');
-      const html = await res.text();
-      const container = document.getElementById('previewConference');
-      container.innerHTML = `<iframe srcdoc="${html.replace(/"/g, '&quot;')}"></iframe>`;
-    } catch (err) {
-      document.getElementById('previewConference').innerHTML = 
-        `<div class="campaign-preview-loading" style="color:var(--danger)">Failed to load preview</div>`;
-    }
+  // ── TEMPLATE STATE ──
+  let templates = [];
+  let templateProps = {}; // Store current props for each template
+  let previewDebounceTimers = {};
 
-    // Load Community preview
+  // ── LOAD TEMPLATES ──
+  async function loadTemplates() {
+    const grid = document.getElementById('templatesGrid');
+    
     try {
-      const res = await authFetch('/api/preview/community');
+      const res = await authFetch('/api/templates');
+      templates = await res.json();
+      
+      // Initialize props for each template
+      templates.forEach(t => {
+        templateProps[t.id] = { ...t.defaultProps };
+      });
+      
+      renderTemplateCards();
+    } catch (err) {
+      console.error('Failed to load templates:', err);
+      grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--danger);grid-column:1/-1;">Failed to load templates</div>';
+    }
+  }
+
+  // ── RENDER TEMPLATE CARDS ──
+  function renderTemplateCards() {
+    const grid = document.getElementById('templatesGrid');
+    
+    grid.innerHTML = templates.map(template => `
+      <div class="campaign-card fade-in" id="card-${template.id}">
+        <div class="campaign-header">
+          <div>
+            <div class="campaign-title">${esc(template.name)}</div>
+            <div class="campaign-subject"><strong>Subject:</strong> ${esc(template.subject)}</div>
+            <div style="color:var(--muted);font-size:10px;margin-top:4px;">${esc(template.description)}</div>
+          </div>
+          <span class="campaign-badge">${template.id.toUpperCase()}</span>
+        </div>
+        
+        <div class="campaign-preview" id="preview-${template.id}">
+          <div class="campaign-preview-loading">Loading preview...</div>
+        </div>
+        
+        <!-- Prop Editor -->
+        <div class="template-props">
+          <div class="props-toggle" onclick="toggleProps('${template.id}')">
+            <span class="props-toggle-title">
+              <span>✏️</span>
+              <span>Edit Preview Data</span>
+            </span>
+            <span class="props-toggle-icon" id="props-icon-${template.id}">▼</span>
+          </div>
+          <div class="props-form" id="props-form-${template.id}">
+            ${renderPropInputs(template)}
+          </div>
+        </div>
+        
+        <div class="campaign-actions">
+          <button class="btn btn-gold" onclick="sendTestEmail('${template.id}')" id="btnTest-${template.id}">
+            📤 Send Test
+          </button>
+          <button class="btn btn-ghost" onclick="generatePreviewLink('${template.id}')" id="btnPreview-${template.id}">
+            🔗 Share Link
+          </button>
+        </div>
+        <div class="test-results hidden" id="results-${template.id}"></div>
+        <div class="test-results hidden" id="previewLink-${template.id}"></div>
+      </div>
+    `).join('');
+    
+    // Load initial previews
+    templates.forEach(t => loadTemplatePreview(t.id));
+  }
+
+  // ── RENDER PROP INPUTS ──
+  function renderPropInputs(template) {
+    if (!template.propTypes) return '<div style="color:var(--muted);font-size:11px;">No editable properties</div>';
+    
+    return Object.entries(template.propTypes).map(([key, config]) => {
+      const value = templateProps[template.id]?.[key] ?? template.defaultProps[key] ?? '';
+      
+      if (config.type === 'boolean') {
+        return `
+          <div class="prop-group">
+            <div class="prop-checkbox-wrapper">
+              <input 
+                type="checkbox" 
+                class="prop-checkbox" 
+                id="prop-${template.id}-${key}"
+                ${value ? 'checked' : ''}
+                onchange="updateProp('${template.id}', '${key}', this.checked)"
+              />
+              <label class="prop-checkbox-label" for="prop-${template.id}-${key}">${esc(config.label)}</label>
+            </div>
+          </div>
+        `;
+      }
+      
+      if (config.type === 'textarea') {
+        return `
+          <div class="prop-group">
+            <label class="prop-label">${esc(config.label)}</label>
+            <textarea 
+              class="prop-input prop-textarea"
+              placeholder="${esc(config.placeholder || '')}"
+              oninput="updateProp('${template.id}', '${key}', this.value)"
+            >${esc(value)}</textarea>
+          </div>
+        `;
+      }
+      
+      return `
+        <div class="prop-group">
+          <label class="prop-label">${esc(config.label)}</label>
+          <input 
+            type="text" 
+            class="prop-input"
+            value="${esc(value)}"
+            placeholder="${esc(config.placeholder || '')}"
+            oninput="updateProp('${template.id}', '${key}', this.value)"
+          />
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ── TOGGLE PROPS PANEL ──
+  function toggleProps(templateId) {
+    const form = document.getElementById(`props-form-${templateId}`);
+    const icon = document.getElementById(`props-icon-${templateId}`);
+    form.classList.toggle('open');
+    icon.classList.toggle('open');
+  }
+
+  // ── UPDATE PROP & REFRESH PREVIEW ──
+  function updateProp(templateId, key, value) {
+    templateProps[templateId] = templateProps[templateId] || {};
+    templateProps[templateId][key] = value;
+    
+    // Debounce preview updates
+    clearTimeout(previewDebounceTimers[templateId]);
+    previewDebounceTimers[templateId] = setTimeout(() => {
+      loadTemplatePreview(templateId);
+    }, 500);
+  }
+
+  // ── LOAD SINGLE TEMPLATE PREVIEW ──
+  async function loadTemplatePreview(templateId) {
+    const container = document.getElementById(`preview-${templateId}`);
+    if (!container) return;
+    
+    // Show updating indicator
+    const existingIndicator = container.querySelector('.preview-updating');
+    if (!existingIndicator) {
+      const indicator = document.createElement('div');
+      indicator.className = 'preview-updating';
+      indicator.textContent = 'Updating...';
+      container.appendChild(indicator);
+    }
+    
+    try {
+      const props = templateProps[templateId] || {};
+      const res = await authFetch(`/api/preview/${templateId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(props),
+      });
       const html = await res.text();
-      const container = document.getElementById('previewCommunity');
       container.innerHTML = `<iframe srcdoc="${html.replace(/"/g, '&quot;')}"></iframe>`;
     } catch (err) {
-      document.getElementById('previewCommunity').innerHTML = 
-        `<div class="campaign-preview-loading" style="color:var(--danger)">Failed to load preview</div>`;
+      console.error(`Failed to load preview for ${templateId}:`, err);
+      container.innerHTML = `<div class="campaign-preview-loading" style="color:var(--danger)">Failed to load preview</div>`;
     }
+  }
+
+  // ── LEGACY FUNCTION (for backward compatibility) ──
+  async function loadCampaignPreviews() {
+    await loadTemplates();
   }
 
   // ── ACCESS CODE STATS ──
@@ -1054,26 +1296,142 @@
     }
   }
 
+  // ── CAMPAIGNS HISTORY ──
+  async function loadCampaignsHistory() {
+    const container = document.getElementById('campaignsHistory');
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:#666;">Loading campaigns...</div>';
+
+    try {
+      const res = await authFetch('/api/campaigns');
+      const campaigns = await res.json();
+
+      if (campaigns.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:40px;color:#666;">No campaigns sent yet</div>';
+        return;
+      }
+
+      container.innerHTML = `
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;background:var(--gray-900);border-radius:8px;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--gray-800);">
+                <th style="padding:12px;text-align:left;color:var(--muted);font-size:10px;letter-spacing:1px;">CAMPAIGN</th>
+                <th style="padding:12px;text-align:left;color:var(--muted);font-size:10px;letter-spacing:1px;">LIST</th>
+                <th style="padding:12px;text-align:left;color:var(--muted);font-size:10px;letter-spacing:1px;">SENT</th>
+                <th style="padding:12px;text-align:right;color:var(--muted);font-size:10px;letter-spacing:1px;">TOTAL</th>
+                <th style="padding:12px;text-align:right;color:var(--muted);font-size:10px;letter-spacing:1px;">OPENS</th>
+                <th style="padding:12px;text-align:right;color:var(--muted);font-size:10px;letter-spacing:1px;">OPEN %</th>
+                <th style="padding:12px;text-align:right;color:var(--muted);font-size:10px;letter-spacing:1px;">CLICKS</th>
+                <th style="padding:12px;text-align:right;color:var(--muted);font-size:10px;letter-spacing:1px;">CLICK %</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${campaigns.map(c => `
+                <tr style="border-bottom:1px solid var(--gray-800);">
+                  <td style="padding:12px;">
+                    <div style="font-weight:500;">${esc(c.name)}</div>
+                    <div style="color:var(--muted);font-size:12px;margin-top:2px;">${esc(c.subject)}</div>
+                  </td>
+                  <td style="padding:12px;color:var(--muted);">${esc(c.listName)}</td>
+                  <td style="padding:12px;color:var(--muted);font-size:12px;">${new Date(c.sentAt).toLocaleDateString()}</td>
+                  <td style="padding:12px;text-align:right;font-weight:500;">${c.totalSent.toLocaleString()}</td>
+                  <td style="padding:12px;text-align:right;">${c.uniqueOpens.toLocaleString()}</td>
+                  <td style="padding:12px;text-align:right;color:${parseFloat(c.openRate) > 20 ? 'var(--success)' : 'var(--warning)'};">
+                    ${c.openRate}%
+                  </td>
+                  <td style="padding:12px;text-align:right;">${c.uniqueClicks.toLocaleString()}</td>
+                  <td style="padding:12px;text-align:right;color:${parseFloat(c.clickRate) > 5 ? 'var(--success)' : 'var(--muted)'};">
+                    ${c.clickRate}%
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    } catch (err) {
+      console.error('Failed to load campaigns:', err);
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--danger);">Failed to load campaigns</div>';
+    }
+  }
+
+  // ── GENERATE PREVIEW LINK ──
+  async function generatePreviewLink(templateId) {
+    const btn = document.getElementById(`btnPreview-${templateId}`);
+    const resultsEl = document.getElementById(`previewLink-${templateId}`);
+    
+    if (!btn || !resultsEl) return;
+    
+    btn.disabled = true;
+    btn.textContent = '🔗 Generating...';
+
+    try {
+      const props = templateProps[templateId] || {};
+      const res = await authFetch('/api/preview/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          templateName: templateId,
+          sampleData: props
+        }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        showToast('✅ Preview link generated (expires in 7 days)', 'success');
+        
+        const expiryDate = new Date(data.expiresAt).toLocaleDateString();
+        resultsEl.innerHTML = `
+          <div style="margin-bottom:8px;color:var(--muted);font-size:10px;letter-spacing:1px;">SHAREABLE PREVIEW LINK</div>
+          <div style="background:var(--surface);padding:12px;border-radius:6px;margin-bottom:8px;">
+            <input 
+              type="text" 
+              value="${esc(data.previewUrl)}" 
+              readonly 
+              onclick="this.select()" 
+              style="width:100%;background:transparent;border:none;color:var(--gold);font-family:monospace;font-size:12px;"
+            />
+          </div>
+          <div style="color:var(--muted);font-size:11px;">
+            Expires: ${expiryDate} &nbsp;•&nbsp; 
+            <a href="${esc(data.previewUrl)}" target="_blank" style="color:var(--gold);">Open →</a>
+          </div>
+        `;
+        resultsEl.classList.remove('hidden');
+      } else {
+        showToast(data.error || 'Failed to generate preview link', 'error');
+      }
+    } catch (err) {
+      showToast('Error: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔗 Share Link';
+    }
+  }
+
   // ── TEST EMAIL ──
-  async function sendTestEmail(templateName) {
-    const btn = document.getElementById(`btnTest${templateName.charAt(0).toUpperCase() + templateName.slice(1)}`);
-    const resultsEl = document.getElementById(`results${templateName.charAt(0).toUpperCase() + templateName.slice(1)}`);
+  async function sendTestEmail(templateId) {
+    const btn = document.getElementById(`btnTest-${templateId}`);
+    const resultsEl = document.getElementById(`results-${templateId}`);
+    
+    if (!btn || !resultsEl) return;
     
     btn.disabled = true;
     btn.textContent = '📤 Sending...';
     resultsEl.classList.add('hidden');
 
     try {
-      const res = await authFetch(`/api/test-send/${templateName}`, {
+      const props = templateProps[templateId] || {};
+      const res = await authFetch(`/api/test-send/${templateId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(props),
       });
       const data = await res.json();
 
       if (data.success) {
         showToast(`✅ Test emails sent: ${data.sent} success, ${data.failed} failed`, data.failed > 0 ? 'error' : 'success');
         
-        // Show results
         resultsEl.innerHTML = `
           <div style="margin-bottom:8px;color:var(--muted);font-size:10px;letter-spacing:1px;">TEST RESULTS</div>
           ${data.results.map(r => `
@@ -1092,7 +1450,7 @@
       showToast('Error: ' + err.message, 'error');
     } finally {
       btn.disabled = false;
-      btn.textContent = '📤 Send Test Email';
+      btn.textContent = '📤 Send Test';
     }
   }
 
